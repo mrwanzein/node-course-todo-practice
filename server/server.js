@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -65,6 +66,34 @@ app.delete('/todos/:id', (req, res) => {
         }
         
         res.send(doc);
+    }).catch((e) => {
+        res.status(400).send();
+    });   
+});
+
+app.patch('/todos/:id', (req, res) => {
+    let id = req.params.id;
+    let body = _.pick(req.body, ['text', 'completed']);
+
+    if (!ObjectID.isValid(id)) {
+        return res.status(404).send('Invalid Id');
+       }
+
+    if (_.isBoolean(body.completed) && body.completed) {
+        let hours = new Date().getHours();
+        let minutes = new Date().getMinutes();
+        body.completedAt = `${hours}:${minutes}`;
+    } else {
+        body.completed = false;
+        body.completedAt = null;
+    }
+
+    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((doc) => {
+        if (!doc) {
+            return res.status(404).send('Can\'t find id');
+        }
+
+        res.send({todo: doc});
     }).catch((e) => {
         res.status(400).send();
     });   
