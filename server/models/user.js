@@ -33,7 +33,7 @@ let UserSchema = new mongoose.Schema({
    
 });
 
-UserSchema.methods.toJSON = function () {
+UserSchema.methods.toJSON = function() {
   let user = this;
   let userObject = user.toObject();
 
@@ -41,7 +41,7 @@ UserSchema.methods.toJSON = function () {
   
 };
 
-UserSchema.methods.generateAuthToken = function () {
+UserSchema.methods.generateAuthToken = function() {
     let user = this; // does not work in arrow function
     let access = 'auth';
     let token = jwt.sign({_id: user._id.toHexString(), access}, 'youandme').toString();
@@ -51,6 +51,23 @@ UserSchema.methods.generateAuthToken = function () {
     return user.save().then(() => {
         return token;
     });
+};
+
+UserSchema.statics.findByToken = function(token) {
+    let User = this;
+    let decoded;
+
+    try {
+        decoded = jwt.verify(token, 'youandme');
+    } catch(e) {
+        return Promise.reject();
+    }
+
+   return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+   });
 };
 
 let User = mongoose.model('User', UserSchema);
